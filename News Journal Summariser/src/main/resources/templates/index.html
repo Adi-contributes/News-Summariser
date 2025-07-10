@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Journal Summariser</title>
+    <style>
+      body {
+        font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #181a20;
+        color: #e0e0e0;
+        min-height: 100vh;
+      }
+      h1,
+      h2 {
+        color: #fff;
+        margin-top: 0;
+        letter-spacing: 0.04em;
+        text-shadow: 0 2px 8px #000a;
+      }
+      #entry-form,
+      #entries {
+        background: #23262f;
+        padding: 28px 32px;
+        margin: 40px auto 28px auto;
+        border-radius: 18px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35), 0 1.5px 0 #00ff99;
+        max-width: 750px;
+        backdrop-filter: blur(6px);
+        border: 1.5px solid #23262f;
+      }
+      input,
+      textarea {
+        display: block;
+        margin-bottom: 18px;
+        width: 100%;
+        padding: 14px;
+        border-radius: 8px;
+        border: 1.5px solid #353945;
+        background: #181a20;
+        color: #e0e0e0;
+        font-size: 1.08rem;
+        transition: border 0.2s, box-shadow 0.2s;
+        box-shadow: 0 1px 8px #0002;
+      }
+      input:focus,
+      textarea:focus {
+        border: 1.5px solid #00ff99;
+        outline: none;
+        box-shadow: 0 0 0 2px #00ff9955;
+      }
+      button {
+        font-family: inherit;
+        font-weight: 700;
+        font-size: 1.05rem;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 28px;
+        margin-right: 10px;
+        margin-top: 2px;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+        box-shadow: 0 2px 12px 0 #00ff9940;
+        letter-spacing: 0.03em;
+      }
+      button[type="submit"] {
+        background: #00ff99;
+        color: #181a20;
+      }
+      button[type="submit"]:hover,
+      button[type="submit"]:focus {
+        background: #00c3ff;
+        color: #fff;
+        box-shadow: 0 0 12px 2px #00ff99cc;
+        transform: translateY(-2px) scale(1.04);
+      }
+      button.summarise,
+      .summarise-btn {
+        background: #ff4d4f;
+        color: #fff;
+      }
+      button.summarise:hover,
+      .summarise-btn:hover,
+      button.summarise:focus,
+      .summarise-btn:focus {
+        background: #00ff99;
+        color: #181a20;
+        box-shadow: 0 0 12px 2px #ff4d4fcc;
+        transform: translateY(-2px) scale(1.04);
+      }
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: #23262f;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 2px 18px 0 #000a;
+        margin-top: 10px;
+      }
+      thead {
+        background: #1f222a;
+      }
+      th,
+      td {
+        padding: 18px 14px;
+        text-align: left;
+        font-size: 1.05rem;
+      }
+      th {
+        color: #00ff99;
+        font-weight: 800;
+        border-bottom: 2.5px solid #353945;
+        background: #1f222a;
+        letter-spacing: 0.04em;
+      }
+      td {
+        border-bottom: 1.5px solid #353945;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover {
+        background: #23262f;
+        filter: brightness(1.12);
+        transition: filter 0.2s;
+      }
+      #summary-box {
+        margin: 40px auto 0 auto;
+        max-width: 750px;
+        padding: 24px 28px;
+        border: 2.5px solid #00ff99;
+        border-radius: 16px;
+        background: #23262f;
+        color: #fff;
+        font-size: 1.18rem;
+        min-height: 56px;
+        box-shadow: 0 2px 24px 0 #00ff9940, 0 0 16px 2px #00ff99cc;
+        letter-spacing: 0.01em;
+        text-shadow: 0 1px 8px #000a;
+        display: flex;
+        align-items: center;
+      }
+      @media (max-width: 900px) {
+        #entry-form,
+        #entries,
+        #summary-box {
+          max-width: 98vw;
+          padding: 12px;
+        }
+        th,
+        td {
+          padding: 8px 4px;
+          font-size: 0.98rem;
+        }
+      }
+      .toggle-btn {
+        background: #353945;
+        color: #00ff99;
+        border: 1.5px solid #00ff99;
+        padding: 10px 18px;
+        margin-bottom: 18px;
+        margin-left: 0;
+        font-size: 0.98rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+      }
+      .toggle-btn:hover {
+        background: #00ff99;
+        color: #181a20;
+      }
+      .hidden {
+        display: none;
+      }
+
+      .entry-row {
+        position: relative;
+      }
+
+      .content-cell {
+        position: relative;
+      }
+
+      .content-display {
+        position: relative;
+        padding-right: 80px;
+        min-height: 20px;
+      }
+
+      .modify-btn {
+        position: absolute;
+        right: 5px;
+        top: 5px;
+        background: #ff6b35;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.3s, background 0.2s;
+        z-index: 10;
+        font-weight: bold;
+      }
+
+      .entry-row:hover .modify-btn {
+        opacity: 1;
+      }
+
+      .modify-btn:hover {
+        background: #ff8c42;
+      }
+
+      .edit-content {
+        width: 100%;
+        min-height: 60px;
+        padding: 8px;
+        border: 1px solid #00ff99;
+        border-radius: 4px;
+        background: #181a20;
+        color: #e0e0e0;
+        font-family: inherit;
+        resize: vertical;
+      }
+
+      .save-btn {
+        background: #00ff99;
+        color: #181a20;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        margin-left: 8px;
+      }
+
+      .save-btn:hover {
+        background: #00c3ff;
+        color: #fff;
+      }
+
+      .cancel-btn {
+        background: #ff4d4f;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        margin-left: 4px;
+      }
+
+      .cancel-btn:hover {
+        background: #ff7875;
+      }
+    </style>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <h1>Journal Entries</h1>
+    <div id="entry-form">
+      <h2>Add New Entry</h2>
+      <form
+        th:action="@{/journal/create}"
+        th:object="${journalEntry}"
+        method="post"
+      >
+        <div
+          style="
+            margin-bottom: 18px;
+            padding: 14px;
+            background: #353945;
+            border-radius: 8px;
+            border: 1.5px solid #00ff99;
+          "
+        >
+          <span style="color: #00ff99; font-weight: bold">Next Entry ID: </span>
+          <span style="color: #e0e0e0" th:text="${nextId}">1</span>
+        </div>
+        <input
+          type="text"
+          id="entryTitle"
+          th:field="*{title}"
+          placeholder="Title"
+          required
+        />
+        <input type="hidden" name="isUrlMode" id="isUrlMode" value="false" />
+        <div style="display: flex; align-items: flex-start; gap: 10px">
+          <textarea
+            id="entryContent"
+            th:field="*{content}"
+            placeholder="Content"
+            required
+            style="flex: 1"
+          ></textarea>
+          <input
+            type="url"
+            id="entryUrl"
+            name="url"
+            placeholder="Paste news article URL here"
+            class="hidden"
+            style="flex: 1"
+          />
+          <button
+            type="button"
+            class="toggle-btn"
+            id="toggleInputBtn"
+            onclick="toggleInputMode()"
+          >
+            Add URL instead
+          </button>
+        </div>
+        <button type="submit">Add Entry</button>
+      </form>
+    </div>
+    <script>
+      let urlMode = false;
+      function toggleInputMode() {
+        urlMode = !urlMode;
+        const contentBox = document.getElementById("entryContent");
+        const urlBox = document.getElementById("entryUrl");
+        const toggleBtn = document.getElementById("toggleInputBtn");
+        const isUrlModeInput = document.getElementById("isUrlMode");
+        if (urlMode) {
+          contentBox.classList.add("hidden");
+          contentBox.removeAttribute("required");
+          urlBox.classList.remove("hidden");
+          urlBox.setAttribute("required", "required");
+          toggleBtn.textContent = "Add content instead";
+          isUrlModeInput.value = "true";
+        } else {
+          urlBox.classList.add("hidden");
+          urlBox.removeAttribute("required");
+          contentBox.classList.remove("hidden");
+          contentBox.setAttribute("required", "required");
+          toggleBtn.textContent = "Add URL instead";
+          isUrlModeInput.value = "false";
+        }
+      }
+
+      function startEdit(entryId) {
+        const contentDisplay = document.getElementById("content-" + entryId);
+        const contentEdit = document.getElementById("edit-" + entryId);
+        const textarea = document.getElementById("textarea-" + entryId);
+
+        contentDisplay.classList.add("hidden");
+        contentEdit.classList.remove("hidden");
+        textarea.focus();
+        textarea.select();
+      }
+
+      function saveEdit(entryId) {
+        const textarea = document.getElementById("textarea-" + entryId);
+        const newContent = textarea.value;
+
+        // Create form data
+        const formData = new FormData();
+        formData.append("content", newContent);
+
+        // Send POST request to update endpoint
+        fetch("/journal/update/" + entryId, {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => {
+            if (response.ok) {
+              // Update the display content
+              const contentSpan = document.querySelector(
+                "#content-" + entryId + " span"
+              );
+              contentSpan.textContent = newContent;
+
+              // Switch back to display mode
+              cancelEdit(entryId);
+
+              // Show success message
+              showMessage("Entry updated successfully!");
+            } else {
+              showMessage("Error updating entry");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            showMessage("Error updating entry");
+          });
+      }
+
+      function cancelEdit(entryId) {
+        const contentDisplay = document.getElementById("content-" + entryId);
+        const contentEdit = document.getElementById("edit-" + entryId);
+        const textarea = document.getElementById("textarea-" + entryId);
+
+        // Reset textarea to original content
+        const originalContent = document.querySelector(
+          "#content-" + entryId + " span"
+        ).textContent;
+        textarea.value = originalContent;
+
+        contentEdit.classList.add("hidden");
+        contentDisplay.classList.remove("hidden");
+      }
+
+      function showMessage(message) {
+        // Create a temporary message element
+        const messageDiv = document.createElement("div");
+        messageDiv.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #00ff99;
+          color: #181a20;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-weight: bold;
+          z-index: 1000;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        messageDiv.textContent = message;
+        document.body.appendChild(messageDiv);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+          document.body.removeChild(messageDiv);
+        }, 3000);
+      }
+    </script>
+    <div id="entries">
+      <h2>All Entries</h2>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Content</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="entry : ${entries}" class="entry-row">
+            <td th:text="${entry.id}"></td>
+            <td th:text="${entry.title}"></td>
+            <td class="content-cell">
+              <div class="content-display" th:id="'content-' + ${entry.id}">
+                <span th:text="${entry.content}"></span>
+                <button
+                  class="modify-btn"
+                  th:onclick="'startEdit(' + ${entry.id} + ')'"
+                >
+                  Modify
+                </button>
+              </div>
+              <div class="content-edit hidden" th:id="'edit-' + ${entry.id}">
+                <textarea
+                  class="edit-content"
+                  th:id="'textarea-' + ${entry.id}"
+                  th:value="${entry.content}"
+                ></textarea>
+                <div style="margin-top: 8px">
+                  <button
+                    class="save-btn"
+                    th:onclick="'saveEdit(' + ${entry.id} + ')'"
+                  >
+                    Save
+                  </button>
+                  <button
+                    class="cancel-btn"
+                    th:onclick="'cancelEdit(' + ${entry.id} + ')'"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </td>
+            <td>
+              <form
+                th:action="@{/journal/summarise/{id}(id=${entry.id})}"
+                method="post"
+                style="display: inline"
+              >
+                <button type="submit" class="summarise">Summarise</button>
+              </form>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="summary-box">
+      <span th:if="${processingSummary}">Processing summary...</span>
+      <span
+        th:if="${summaryMessage != null}"
+        th:utext="${summaryMessage}"
+      ></span>
+    </div>
+    <div style="height: 120px"></div>
+    <div style="width: 100%; text-align: center; margin-top: 80px">
+      <span style="font-size: 10px; color: #888; letter-spacing: 0.04em"
+        >Commercial use not allowed</span
+      >
+    </div>
+  </body>
+</html>

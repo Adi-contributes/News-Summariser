@@ -1,0 +1,94 @@
+@startuml
+
+' Styling
+skinparam {
+    componentStyle uml2
+    backgroundColor #FFFFFF
+    packageStyle rectangle
+}
+
+' Title
+title Journal Application - Architecture Diagram
+
+' Main Application Package
+package "Journal Application" {
+    ' Client Component
+    [Client] as client
+
+    ' Web Layer
+    package "Web Layer" #LightBlue {
+        [JournalEntryController] as controller
+        [HealthCheck] as health
+        
+        note right of controller
+            REST endpoints for CRUD operations
+            on Journal Entries
+        end note
+    }
+    
+    ' Domain Layer
+    package "Domain Layer" #LightGreen {
+        entity "JournalEntry" as JournalEntry {
+            --attributes--
+            id: Long
+            title: String
+            content: String
+            createdAt: LocalDateTime
+            --methods--
+            getId(): Long
+            getTitle(): String
+            getContent(): String
+            getCreatedAt(): LocalDateTime
+            setTitle(String)
+            setContent(String)
+        }
+    }
+    
+    ' Application Layer
+    package "Application Layer" #LightYellow {
+        interface "JournalService" as JournalService {
+            createEntry(JournalEntry): JournalEntry
+            getEntry(Long): Optional<JournalEntry>
+            getAllEntries(): List<JournalEntry>
+            updateEntry(Long, JournalEntry): JournalEntry
+            deleteEntry(Long): void
+        }
+    }
+
+    ' Infrastructure Layer
+    package "Infrastructure Layer" #LightGray {
+        database "Database" {
+            [Journal Data] as journalData
+        }
+    }
+}
+
+' Relationships
+client --> controller : HTTP Requests
+controller --> JournalEntry : uses
+controller --> JournalService : implements
+JournalService --> journalData : persists
+health --> client : Health Status
+
+' Request Flow
+note right of client
+    1. Client sends HTTP request
+    2. Controller handles request
+    3. Service processes business logic
+    4. Entity manages data structure
+    5. Database stores information
+end note
+
+' Technology Stack
+legend right
+    Technologies
+    ==
+    Spring Boot 3.3.12
+    Java 21
+    Maven
+    Lombok
+    Spring Web
+    Spring Actuator
+end legend
+
+@enduml
